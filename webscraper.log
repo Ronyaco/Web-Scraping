@@ -1,0 +1,4 @@
+INFO:root:Scrapping Data Science Books from Amazon
+INFO:root:Generating CSV file 
+INFO:root:Writting data from Amazon
+INFO:root:data collected successfully. Script finished

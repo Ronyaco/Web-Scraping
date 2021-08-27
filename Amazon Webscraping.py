@@ -5,9 +5,21 @@ from bs4 import BeautifulSoup
 from urllib.request import urlopen as uReq
 from requests_html import HTMLSession
 import requests
+import logging
+import os
 
-# Defining the url, in this project will be targeting Amazon AU, searching "data science books"
-url = "https://www.amazon.com.au/s?k=data+science+books&ref=nb_sb_noss_1"
+## Setting to keep a log and print out status in terminal
+
+logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+consoleHandler = logging.StreamHandler()
+consoleHandler.setFormatter(logFormatter)
+logging.basicConfig(level=logging.INFO,
+                    format='[%(levelname)s][%(threadName)-s][%(asctime)s] %(message)s',
+                    handlers=[
+                        logging.FileHandler("amazonwebscraper.log"), consoleHandler
+                    ]
+                    )
+
 
 # This function gets the data into page_soup variable
 def get_data(url):
@@ -17,17 +29,10 @@ def get_data(url):
     page_soup = BeautifulSoup(page.content, "html.parser")
     return page_soup
 
-#  Creating the csv file where the data will be written
-filename = 'Data_Science_Books.csv'
-f = open(filename,'w')
-headers = 'title, author, price, rating\n'
-f.write(headers)
-
-
 # get_items take page_soup as parameter and identifies the books in the page using findAll 
 # looping through each book found in the soup
 # an writting in the csv that it is open 
-def get_items(page_soup):
+def get_and_write_items(page_soup):
     
     containers =page_soup.findAll('div',{'data-component-type':"s-search-result"})
         
@@ -59,10 +64,6 @@ def get_items(page_soup):
         # Writing books found in the first page (soup)   
         f.write(title+','+ author+','+ price+','+ rating +'\n' )
 
-# calling fuction get_items
-page_soup = get_data(url)
-get_items(page_soup)
-
 # getting and building the link for the next page 
 def get_next_page(page_soup):
     
@@ -74,14 +75,40 @@ def get_next_page(page_soup):
         return ''
 
 
-# looping through the next page while there is one 
-while get_next_page(page_soup) != '':
-    
-    page_soup = get_data(get_next_page(page_soup))
-    
-    get_items(page_soup)
+if __name__ == '__main__':
 
-#Closing the file
 
-f.close()
+
+    logging.info(  'Scrapping Data Science Books from Amazon')
+
+    # Defining the url. In this project will be targeting Amazon AU, searching "data science books"
+    url = "https://www.amazon.com.au/s?k=data+science+books&ref=nb_sb_noss_1"
+
+
+    logging.info('Generating CSV file ')
+    #  Creating the csv file where the data will be written
+    filename = 'Data_Science_Books.csv'
+    f = open(filename,'w')
+    headers = 'title, author, price, rating\n'
+    f.write(headers)
+
+
+    logging.info('Writting data from Amazon')
+    # calling fuction get_items
+    page_soup = get_data(url)
+    get_and_write_items(page_soup)
+
+
+    # looping through the next page while there is one 
+    while get_next_page(page_soup) != '':
+        
+        page_soup = get_data(get_next_page(page_soup))
+        
+        get_and_write_items(page_soup)
+
+    #Closing the file
+
+    f.close()
+
+    logging.info('data collected successfully. Script finished')
     
